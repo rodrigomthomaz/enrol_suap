@@ -58,11 +58,6 @@ class enrol_suap_plugin extends enrol_plugin {
         if (!has_capability('enrol/suap:manage', $context)){
             return false;
         }
-        $tem_metodo_inscricao = $DB->record_exists('enrol', array('courseid'=>$courseid, 'enrol'=>$this->get_name()));
-        if ($tem_metodo_inscricao) {
-            // only one instance allowed, sorry
-            return false;
-        }
         return true;
     }    
     public function can_edit_instance($courseid) {
@@ -70,6 +65,23 @@ class enrol_suap_plugin extends enrol_plugin {
     }
     public function edit_instance_form($instance, MoodleQuickForm $mform, $coursecontext) {
         if (has_any_capability(['enrol/manual:config'], $coursecontext)) {
+            $mform->addElement(
+                'text',
+                'name',
+                get_string(
+                    identifier: 'config_diario_name',
+                    component: 'enrol_suap',
+                ),
+                1,
+                'A'
+            );
+            $mform->setType('name', PARAM_RAW);
+            $mform->addHelpButton(
+                elementname: 'name',
+                identifier: 'config_diario_name_desc',
+                component: 'enrol_suap',
+            );
+
             $mform->addElement(
                 'text',
                 'customint1',
@@ -122,11 +134,6 @@ class enrol_suap_plugin extends enrol_plugin {
     public function add_instance($course, ?array $fields = NULL) {
         global $DB;
 
-        if ($DB->record_exists('enrol', array('courseid'=>$course->id, 'enrol'=>$this->get_name()))) {
-            // only one instance allowed, sorry
-            return NULL;
-        }
-
         return parent::add_instance($course, $fields);
     }
     public function can_delete_instance($instance) {        
@@ -171,7 +178,7 @@ class enrol_suap_plugin extends enrol_plugin {
         //    return NULL;
         //}
 
-        return new moodle_url('/enrol/suap/tasks/update.php', array('enrolid'=>$instance->id, 'id'=>$instance->courseid, 'redirect'=>1));
+        return new moodle_url('/enrol/suap/tasks/update.php', array('enrolid'=>$instance->id, 'id'=>$instance->courseid, 'redirect'=>1, 'outras_instancias'=>1));
     }
 
         

@@ -42,6 +42,17 @@ if ($ADMIN->fulltree) {
             [false=>"Usando Prontuário",true=>"Usando Documento Identificador"]
         )
     );
+    
+    $settings->add(new admin_setting_heading('enrol_suap_manual', get_string('config_manual', 'enrol_suap'), ''));
+    $settings->add(
+        new admin_setting_configtext(
+            'enrol_suap_update_set_time_limit',
+            get_string('config_update_set_time_limit', 'enrol_suap'),
+            get_string('config_update_set_time_limit_desc', 'enrol_suap'),
+            300,
+            PARAM_INT
+        )
+    );
     $settings->add(
         new admin_setting_configtext(
             'enrol_suap_tempo_proxima',
@@ -51,7 +62,6 @@ if ($ADMIN->fulltree) {
             PARAM_INT
         )
     );
-    
     $settings->add(new admin_setting_heading('enrol_suap_foto', get_string('config_foto', 'enrol_suap'), ''));
     $settings->add(
         new admin_setting_configselect(
