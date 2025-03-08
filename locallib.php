@@ -231,11 +231,12 @@ class SuapPolo extends SuapEntidadeDependentePeriodo {
     public function inserir_usuario_ao_polo($inscrito_suap){
         global $DB;
         if ($DB->get_record('groups_members', ['groupid' => $this->id_moodle, 'userid' => $inscrito_suap->id_moodle, ])) {
-            debugging("Já estava no grupo {$this->descricao}.", true);
+            echo_cli("Grupo {$this->descricao}: Sim. ", true);
 
         } else {
-            debugging("Adicionado ao grupo {$this->descricao}.", true);            
+            echo_cli("Grupo {$this->descricao}. Não. ", true);            
             groups_add_member($this->id_moodle, $inscrito_suap->id_moodle);
+            echo_cli("Adicionado. ", true); 
         }
     }
 }
@@ -535,19 +536,26 @@ class SuapInscrito extends SuapEntidadeAbstrata {
             $folder = $CFG->dataroot."/pictures/";
             $filename = $this->username.".jpg";
             $userpath = $folder . $filename;
-            if (file_exists($userpath)){
+            $userpath_dummy = "$userpath.dummy";
+            if (file_exists($userpath_dummy)){
                 $tempo_atual = time();
-                $tempo_arquivo = filemtime($userpath);
-                $tempo_diff = $tempo_atual - $tempo_arquivo;
-                if ($tempo_diff < $CFG->enrol_suap_tempo_foto){                    
-                    echo_cli(" - A foto $userpath é recente. Ignorar busca.");
+                $data_acesso_arquivo_local = fileatime($userpath_dummy);
+                $data_modificacao_arquivo_local = filemtime($userpath_dummy);
+                $tempo_diff = $tempo_atual - $data_acesso_arquivo_local;
+                if ($tempo_diff < $CFG->enrol_suap_tempo_foto){
+                    $timeout = $CFG->enrol_suap_tempo_foto - $tempo_diff;                 
+                    echo_cli("Foto remota ignorada (timeout em ${timeout}s). ");
                     return;
-                }
-
+                }                
+            } else{
+                $data_acesso_arquivo_local = 0;
+                $data_modificacao_arquivo_local = 0;
             }
+            echo_cli("Comparando foto do SUAP...");
             if(! is_dir($folder)) {
                 mkdir($folder);
             }
+            
             $curl = curl_init($this->foto_url);
             curl_setopt($curl, CURLOPT_NOBODY, true);
             curl_setopt($curl, CURLOPT_HEADER, true);
@@ -555,19 +563,31 @@ class SuapInscrito extends SuapEntidadeAbstrata {
             curl_setopt($curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
             $content = curl_exec($curl);
             curl_close($curl);
+            $data_modificacao_arquivo_suap = 0;
+            
             if (preg_match('/last-modified:\s?(?<date>.+)\n/i', $content, $m)) {
-               if ((!file_exists($userpath)) || (filemtime($userpath) < strtotime($m['date']))) {
+               $data_modificacao_arquivo_suap = strtotime($m['date']);
+               if ((!file_exists($userpath)) || ($data_modificacao_arquivo_local <  $data_modificacao_arquivo_suap)) {
                     file_put_contents($userpath, file_get_contents($this->foto_url), LOCK_EX);
-                    //touch($userpath, strtotime($m['date']), strtotime($m['date']));                
+               } else {                
+                    echo_cli("Foto remota não foi salva (local é mais recente). "); 
+                    touch($userpath_dummy, $data_modificacao_arquivo_suap, time());  
+                    return;                   
                }
-            }            
+            } else {
+                echo_cli("Não foi possível analisar a data da foto! ");
+                return;
+            }           
+            echo_cli("Alterando foto... ");
             if (file_exists($userpath)){
-                touch($userpath, time(), time()); 
                 $context = \context_user::instance($this->id_moodle);
                 $fileId = process_new_icon($context, 'user', 'icon', 0, $userpath);
                 if ($fileId) {
+                    echo_cli("Definindo foto... ");
                     $DB->set_field('user', 'picture', $fileId, array('id' => $this->id_moodle));
                 }
+                unlink($userpath);
+                touch($userpath_dummy, $data_modificacao_arquivo_suap, time());  
             }
         }        
     }
@@ -762,9 +782,12 @@ abstract class MoodleEntidadeAbstrata {
             }   
         } catch(Exception $e){}
         try{
-            if (isset($this->moodle_info[$item])){
-                return $this->moodle_info[$item];
+            if (!is_object($this->moodle_info)){
+                if (isset($this->moodle_info[$item])){
+                    return $this->moodle_info[$item];
+                }
             }
+            
         } catch(Exception $e){}
                             
         return NULL;
@@ -977,12 +1000,16 @@ class MoodleEnrol extends MoodleEntidadeAbstrata{
                             $exec_quando_encontrado = NULL, 
                             $exec_quando_nao_encontrado = NULL, 
                             $exec_inscritos_moodle_restantes = NULL,
-                            $respect_last_time = TRUE)
+                            $respect_last_time = TRUE,
+                            $baixar_fotos = NULL)
     {      
         $tg = tempo_inicio();  
         global $DB, $CFG;
         //exit(var_dump($this->course->context));
-        $sql_filter_role_id = '';        
+        $sql_filter_role_id = '';
+        if (is_null($baixar_fotos)){
+            $baixar_fotos = $CFG->enrol_suap_baixar_foto_manual;
+        }        
         if ($respect_last_time){
             $tempo_ultima_execucao = time() - $this->timemodified;
             $tempo_proxima_execucao = $CFG->enrol_suap_tempo_proxima;
@@ -1025,7 +1052,7 @@ class MoodleEnrol extends MoodleEntidadeAbstrata{
             if ($force_merge){ 
                 debugging('<pre>importar_em_moodle</pre>');                
                 $inscrito_suap->importar_em_moodle();
-                if ($CFG->enrol_suap_baixar_foto_manual){
+                if ($baixar_fotos){
                     debugging('<pre>atualizar_foto</pre>');
                     $inscrito_suap->atualizar_foto();
                 }

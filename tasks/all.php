@@ -1,5 +1,5 @@
 <?php
-
+define('CLI_SCRIPT', 1);
 require_once dirname(__FILE__) . '/../../../config.php';
 
 require_once dirname(__FILE__) . '/../locallib.php';

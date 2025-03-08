@@ -277,25 +277,27 @@ class enrol_suap_plugin extends enrol_plugin {
         // echo json_encode($moodle_diarios, JSON_PRETTY_PRINT);
         // echo '</pre>';
         foreach($moodle_diarios as $moodle_diario){ 
-            echo_cli("\nenrol_id=$moodle_diario->id\n");
-            echo_cli(json_encode($moodle_diario));           
+            echo_cli("\nenrol_id=$moodle_diario->id\ncourse_id=$moodle_diario->courseid\ndiario_id=$moodle_diario->customint1");
+            //echo_cli(json_encode($moodle_diario));           
             
-            $moodle_diario->merge(FALSE,
+            $moodle_diario->merge(TRUE,
                 function($inscrito_encontrado){                    
-                    echo_cli("\n - Usuário inscrito no SUAP e no Moodle: " . $inscrito_encontrado->username . ' ' . $inscrito_encontrado->nome );
+                    echo_cli("\n - SUAP: Sim - Moodle: Sim = " . $inscrito_encontrado->username . ' ' . $inscrito_encontrado->nome . '. ' );
                 },
                 function($inscrito_nao_encontrado) {                    
-                    echo_cli("\n - Usuário inscrito no SUAP e não no Moodle: "  . $inscrito_nao_encontrado->username . ' ' . $inscrito_nao_encontrado->nome );
+                    echo_cli("\n - SUAP: Sim - Moodle: Não = "  . $inscrito_nao_encontrado->username . ' ' . $inscrito_nao_encontrado->nome . '. ');
                 },
                 function($inscritos_sobrando) {                    
                     if (CLI_SCRIPT) {
                         if (count($inscritos_sobrando)> 0){
                             foreach($inscritos_sobrando as $inscrito){
-                                echo ("\n - Usuário sobrando no Moodle: ". $inscrito->username . ' ' . $inscrito->alternatename  );                            
+                                echo ("\n - SUAP: Não - Moodle: Sim = ". $inscrito->username . ' ' . $inscrito->alternatename . '. '  );                            
                             }            
                         } 
                     }       
-                },        
+                },
+                 FALSE,
+                 TRUE       
             );
             echo_cli("\n");
             

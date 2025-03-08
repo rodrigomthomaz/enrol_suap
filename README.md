@@ -22,13 +22,14 @@ Ao adicionar este método de inscrição em um curso do Moodle (comumente conhec
 - Insira um nome (opcional) e o código do diário do SUAP;
 - Salve as alterações.
 
-## Baixar dados do SUAP
+## Baixar inscritos do SUAP
 
-Existem três maneiras de baixar conteúdo do SUAP:
+Existem quatro maneiras de baixar os inscritos do SUAP:
 
 1. **Botão "Atualizar"**: Na lista de métodos de inscrição, clique no ícone "Atualizar" da instância de inscrição SUAP. Isso baixará os dados do diário da instância selecionada. Por padrão, os professores podem realizar essa ação manualmente.
 2. **Botão "Buscar/atualizar inscritos no SUAP"**: Na lista de usuários inscritos, clique no botão "Buscar/atualizar inscritos no SUAP". Isso baixará todos os dados de todas as instâncias de inscrição SUAP. Por padrão, os professores podem realizar essa ação manualmente.
-3. **Tarefas agendadas**: Na seção "Servidor" da "Administração do site", vá em "Tarefas agendadas" e edite a tarefa "Buscar e atualizar inscritos dos diários do SUAP". Por padrão, apenas administradores podem editar essa funcionalidade.
+3. **Tarefas agendadas**: Na seção "Servidor" da "Administração do site", vá em "Tarefas agendadas" e edite a tarefa "Buscar e atualizar inscritos dos diários do SUAP". Por padrão, apenas administradores podem editar essa funcionalidade;
+4. **Linha de comando**: execute `php enrol/suap/tasks/all.php`.
 
 ## Outras configurações
 

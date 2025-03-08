@@ -81,3 +81,19 @@ class enrol_suap_admin_setting_category extends admin_setting_configselect {
         return true;
     }
 }
+
+class admin_setting_configselect_campus extends admin_setting_configselect {
+    public function __construct($name, $visiblename, $description, $defaultsetting) {
+        parent::__construct($name, $visiblename, $description,  $defaultsetting, null);
+    }
+    public function load_choices() {
+        $campi = SuapCampus::obter_todos();
+        if ($campi) {          
+            foreach ($campi as $campus) {
+                $this->choices[$campus->id_suap] = "($campus->id_suap) {$campus->descricao} ($campus->sigla)";
+            }        
+        }
+        return true;
+    }
+}
+
